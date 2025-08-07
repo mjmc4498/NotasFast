@@ -26,6 +26,23 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('notes', JSON.stringify(notes));
     };
 
+    const showAlert = (message, type = 'success') => {
+        const alertContainer = document.getElementById('alert-container');
+        const alert = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+        alertContainer.innerHTML = alert;
+        setTimeout(() => {
+            const alertNode = alertContainer.querySelector('.alert');
+            if (alertNode) {
+                bootstrap.Alert.getOrCreateInstance(alertNode).close();
+            }
+        }, 4000);
+    };
+
     const renderNotes = () => {
         // 1. Get filter and sort values
         const searchTerm = searchInput.value.toLowerCase();
@@ -121,7 +138,8 @@ document.addEventListener('DOMContentLoaded', () => {
             observations: document.getElementById('observations').value,
         };
 
-        if (id) {
+        const isUpdating = !!id;
+        if (isUpdating) {
             const index = notes.findIndex(note => note.id === id);
             if (index > -1) {
                 notes[index] = noteData;
@@ -133,14 +151,64 @@ document.addEventListener('DOMContentLoaded', () => {
         saveNotes();
         renderNotes();
         noteModal.hide();
+        showAlert(`Nota ${isUpdating ? 'actualizada' : 'creada'} con éxito.`, 'success');
     });
 
     // Event listeners for controls
     [searchInput, sortBy, filterByType].forEach(el => el.addEventListener('input', renderNotes));
 
+    const exportNotesBtn = document.getElementById('export-notes-btn');
+    const importNotesBtn = document.getElementById('import-notes-btn');
+    const importFileInput = document.getElementById('import-file-input');
+
+    exportNotesBtn.addEventListener('click', () => {
+        if (notes.length === 0) {
+            showAlert('No hay notas para exportar.', 'warning');
+            return;
+        }
+        const dataStr = JSON.stringify(notes, null, 2);
+        const dataBlob = new Blob([dataStr], {type: 'application/json'});
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `notas_reuniones_${new Date().toISOString().split('T')[0]}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+        showAlert('Notas exportadas con éxito.');
+    });
+
+    importNotesBtn.addEventListener('click', () => importFileInput.click());
+
+    importFileInput.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const importedNotes = JSON.parse(e.target.result);
+                if (Array.isArray(importedNotes) && importedNotes.every(n => n.id && n.title)) {
+                    // Simple validation passed
+                    notes = [...notes, ...importedNotes.filter(newNote => !notes.some(existing => existing.id === newNote.id))];
+                    saveNotes();
+                    renderNotes();
+                    showAlert(`${importedNotes.length} notas importadas con éxito.`);
+                } else {
+                    showAlert('El archivo JSON no tiene el formato correcto.', 'danger');
+                }
+            } catch (error) {
+                showAlert('Error al leer el archivo JSON.', 'danger');
+            }
+        };
+        reader.readAsText(file);
+        importFileInput.value = ''; // Reset for same-file import
+    });
+
+
     window.viewNote = (id) => {
         const note = notes.find(note => note.id === id);
         if (note) {
+            viewNoteModal._element.dataset.noteId = id; // Store id in modal
             viewNoteTitle.textContent = note.title;
             viewNoteBody.innerHTML = `
                 <p><strong>Fecha:</strong> ${note.date}</p>
@@ -184,8 +252,84 @@ document.addEventListener('DOMContentLoaded', () => {
             notes = notes.filter(note => note.id !== id);
             saveNotes();
             renderNotes();
+            showAlert('Nota eliminada con éxito.', 'danger');
         }
     };
+
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeIcon = document.querySelector("label[for='theme-toggle'] i");
+
+    const applyTheme = (theme) => {
+        if (theme === 'dark') {
+            document.documentElement.setAttribute('data-bs-theme', 'dark');
+            themeToggle.checked = true;
+            themeIcon.classList.remove('bi-moon-stars-fill');
+            themeIcon.classList.add('bi-sun-fill');
+        } else {
+            document.documentElement.setAttribute('data-bs-theme', 'light');
+            themeToggle.checked = false;
+            themeIcon.classList.remove('bi-sun-fill');
+            themeIcon.classList.add('bi-moon-stars-fill');
+        }
+    };
+
+    themeToggle.addEventListener('click', () => {
+        const newTheme = themeToggle.checked ? 'dark' : 'light';
+        localStorage.setItem('theme', newTheme);
+        applyTheme(newTheme);
+    });
+
+    // Load saved theme
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    applyTheme(savedTheme);
+
+    const copyNoteBtn = document.getElementById('copy-note-btn');
+    const exportPdfBtn = document.getElementById('export-pdf-btn');
+
+    copyNoteBtn.addEventListener('click', () => {
+        const noteId = viewNoteModal._element.dataset.noteId;
+        const note = notes.find(n => n.id === noteId);
+        if (note) {
+            const noteText = `
+Título: ${note.title}
+Fecha: ${note.date}
+Participantes: ${note.participants}
+Tipo: ${note.type}
+
+Temas Tratados:
+${note.topics}
+
+Acuerdos:
+${note.agreements}
+
+Tareas Pendientes:
+${note.tasks || 'Ninguna'}
+
+Observaciones:
+${note.observations || 'Ninguna'}
+            `.trim();
+            navigator.clipboard.writeText(noteText)
+                .then(() => showAlert('Nota copiada al portapapeles.'))
+                .catch(() => showAlert('No se pudo copiar la nota.', 'danger'));
+        }
+    });
+
+    exportPdfBtn.addEventListener('click', () => {
+        const { jsPDF } = window.jspdf;
+        const noteId = viewNoteModal._element.dataset.noteId;
+        const note = notes.find(n => n.id === noteId);
+        if(note) {
+            const doc = new jsPDF();
+            // Simple text based PDF
+            doc.text(`Título: ${note.title}`, 10, 10);
+            doc.text(`Fecha: ${note.date}`, 10, 20);
+            doc.text(`Participantes: ${note.participants}`, 10, 30);
+            // ... add more fields as needed
+            doc.save(`${note.title.replace(/\s/g, '_')}.pdf`);
+            showAlert('La exportación a PDF es una función básica. Se puede mejorar con html2canvas.', 'info');
+        }
+    });
+
 
     // Initial render
     renderNotes();
