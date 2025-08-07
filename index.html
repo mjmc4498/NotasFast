@@ -14,27 +14,67 @@
     </header>
 
     <main class="container mt-4">
-        <section id="form-section" class="mb-4">
-            <button class="btn btn-primary mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#note-form-collapse" aria-expanded="false" aria-controls="note-form-collapse">
-                <i class="bi bi-plus-lg"></i> Nueva Nota
-            </button>
-            <div class="collapse" id="note-form-collapse">
-                <div class="card card-body">
-                    <form id="note-form">
+        <section id="controls-section" class="row g-3 mb-4 align-items-center">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control" id="search-input" placeholder="Buscar por palabras clave...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="sort-by">
+                    <option value="creation-desc">Ordenar por: Más recientes primero</option>
+                    <option value="creation-asc">Ordenar por: Más antiguos primero</option>
+                    <option value="meeting-desc">Ordenar por: Fecha de reunión (desc)</option>
+                    <option value="meeting-asc">Ordenar por: Fecha de reunión (asc)</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="filter-by-type">
+                    <option value="all">Filtrar por tipo: Todos</option>
+                    <option value="Presencial">Presencial</option>
+                    <option value="Virtual">Virtual</option>
+                </select>
+            </div>
+        </section>
+
+        <section id="notes-list" class="row">
+            <!-- Las notas se insertarán aquí -->
+        </section>
+    </main>
+
+    <!-- Floating Action Button -->
+    <button class="btn btn-primary btn-lg rounded-circle" id="add-note-fab" data-bs-toggle="modal" data-bs-target="#note-modal">
+        <i class="bi bi-plus-lg"></i>
+    </button>
+
+    <!-- Note Modal -->
+    <div class="modal fade" id="note-modal" tabindex="-1" aria-labelledby="note-modal-label" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="note-modal-label">Crear/Editar Nota</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="note-form" class="needs-validation" novalidate>
                         <input type="hidden" id="note-id">
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="meeting-title" class="form-label">Título de la Reunión</label>
                                 <input type="text" class="form-control" id="meeting-title" required>
+                                <div class="invalid-feedback">El título es obligatorio.</div>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="meeting-date" class="form-label">Fecha</label>
                                 <input type="date" class="form-control" id="meeting-date" required>
+                                <div class="invalid-feedback">La fecha es obligatoria.</div>
                             </div>
                         </div>
                         <div class="mb-3">
                             <label for="participants" class="form-label">Participantes (separados por comas)</label>
                             <input type="text" class="form-control" id="participants" required>
+                            <div class="invalid-feedback">Los participantes son obligatorios.</div>
                         </div>
                         <div class="mb-3">
                             <label for="meeting-type" class="form-label">Tipo de Reunión</label>
@@ -46,10 +86,12 @@
                         <div class="mb-3">
                             <label for="topics" class="form-label">Temas Tratados</label>
                             <textarea class="form-control" id="topics" rows="3" required></textarea>
+                            <div class="invalid-feedback">Los temas tratados son obligatorios.</div>
                         </div>
                         <div class="mb-3">
                             <label for="agreements" class="form-label">Acuerdos</label>
-                            <textarea class="form-control" id="agreements" rows="3"></textarea>
+                            <textarea class="form-control" id="agreements" rows="3" required></textarea>
+                            <div class="invalid-feedback">Los acuerdos son obligatorios.</div>
                         </div>
                         <div class="mb-3">
                             <label for="pending-tasks" class="form-label">Tareas Pendientes</label>
@@ -59,24 +101,34 @@
                             <label for="observations" class="form-label">Observaciones Adicionales</label>
                             <textarea class="form-control" id="observations" rows="2"></textarea>
                         </div>
-                        <button type="submit" class="btn btn-success">Guardar Nota</button>
-                        <button type="button" class="btn btn-secondary" id="cancel-edit">Cancelar</button>
                     </form>
                 </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="submit" class="btn btn-primary" form="note-form">Guardar Nota</button>
+                </div>
             </div>
-        </section>
+        </div>
+    </div>
 
-        <section id="search-section" class="mb-4">
-            <div class="input-group">
-                <span class="input-group-text"><i class="bi bi-search"></i></span>
-                <input type="text" class="form-control" id="search-input" placeholder="Buscar por título, fecha o participantes...">
-            </div>
-        </section>
+    <!-- View Note Modal -->
+    <div class="modal fade" id="view-note-modal" tabindex="-1" aria-labelledby="view-note-modal-label" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="view-note-title"></h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" id="view-note-body">
+            <!-- Note details will be injected here -->
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
-        <section id="notes-list" class="row">
-            <!-- Las notas se insertarán aquí -->
-        </section>
-    </main>
 
     <footer class="text-center p-3 mt-4 bg-light">
         <p>&copy; 2024 Gestor de Notas. Todos los derechos reservados.</p>
