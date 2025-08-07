@@ -1,0 +1,48 @@
+body {
+    background-color: #f8f9fa;
+    transition: background-color 0.3s;
+}
+
+.card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: none;
+    border-radius: 0.5rem;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.card-title {
+    color: #0d6efd;
+}
+
+.card-header {
+    background-color: #e9ecef;
+    border-bottom: 1px solid #dee2e6;
+}
+
+#note-form-collapse.collapsing {
+    transition: height 0.3s ease;
+}
+
+.btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-primary:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
+
+.form-label {
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 0 20px;
+    }
+}
