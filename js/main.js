@@ -166,15 +166,18 @@ document.addEventListener('DOMContentLoaded', () => {
             showAlert('No hay notas para exportar.', 'warning');
             return;
         }
-        const dataStr = JSON.stringify(notes, null, 2);
-        const dataBlob = new Blob([dataStr], {type: 'application/json'});
-        const url = URL.createObjectURL(dataBlob);
+        const headers = ['id', 'title', 'date', 'participants', 'type', 'topics', 'agreements', 'tasks', 'observations'];
+        const csvData = notes.map(note => headers.map(header => `"${(note[header] || '').toString().replace(/"/g, '""')}"`).join(','));
+        csvData.unshift(headers.join(','));
+
+        const csvBlob = new Blob([csvData.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(csvBlob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `notas_reuniones_${new Date().toISOString().split('T')[0]}.json`;
+        link.download = `notas_reuniones_${new Date().toISOString().split('T')[0]}.csv`;
         link.click();
         URL.revokeObjectURL(url);
-        showAlert('Notas exportadas con éxito.');
+        showAlert('Notas exportadas a CSV con éxito.');
     });
 
     importNotesBtn.addEventListener('click', () => importFileInput.click());
@@ -183,24 +186,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const file = event.target.files[0];
         if (!file) return;
 
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const importedNotes = JSON.parse(e.target.result);
-                if (Array.isArray(importedNotes) && importedNotes.every(n => n.id && n.title)) {
-                    // Simple validation passed
-                    notes = [...notes, ...importedNotes.filter(newNote => !notes.some(existing => existing.id === newNote.id))];
+        Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: (results) => {
+                const importedNotes = results.data;
+                if (Array.isArray(importedNotes)) {
+                     const validNotes = importedNotes.filter(n => n.id && n.title);
+                    notes = [...notes, ...validNotes.filter(newNote => !notes.some(existing => existing.id === newNote.id))];
                     saveNotes();
                     renderNotes();
-                    showAlert(`${importedNotes.length} notas importadas con éxito.`);
+                    showAlert(`${validNotes.length} notas importadas con éxito desde CSV.`);
                 } else {
-                    showAlert('El archivo JSON no tiene el formato correcto.', 'danger');
+                    showAlert('El archivo CSV no pudo ser procesado.', 'danger');
                 }
-            } catch (error) {
-                showAlert('Error al leer el archivo JSON.', 'danger');
+            },
+            error: (error) => {
+                showAlert(`Error al leer el archivo CSV: ${error.message}`, 'danger');
             }
-        };
-        reader.readAsText(file);
+        });
+
         importFileInput.value = ''; // Reset for same-file import
     });
 
