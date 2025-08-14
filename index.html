@@ -19,6 +19,9 @@
 
     <div id="alert-container" class="container mt-3"></div>
     <main class="container mt-4">
+        <section id="dashboard-section" class="row text-center mb-4">
+            <!-- Indicators will be injected here -->
+        </section>
         <section id="controls-section" class="row g-3 mb-4 align-items-center">
             <div class="col-md-4">
                 <div class="input-group">
@@ -86,12 +89,26 @@
                             <input type="text" class="form-control" id="participants" required>
                             <div class="invalid-feedback">Los participantes son obligatorios.</div>
                         </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="meeting-type" class="form-label">Tipo de Reunión</label>
+                                <select class="form-select" id="meeting-type">
+                                    <option value="Presencial">Presencial</option>
+                                    <option value="Virtual">Virtual</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="priority" class="form-label">Prioridad</label>
+                                <select class="form-select" id="priority" required>
+                                    <option value="Bajo">Bajo</option>
+                                    <option value="Medio" selected>Medio</option>
+                                    <option value="Alto">Alto</option>
+                                </select>
+                            </div>
+                        </div>
                         <div class="mb-3">
-                            <label for="meeting-type" class="form-label">Tipo de Reunión</label>
-                            <select class="form-select" id="meeting-type">
-                                <option value="Presencial">Presencial</option>
-                                <option value="Virtual">Virtual</option>
-                            </select>
+                            <label for="deadline" class="form-label">Fecha Límite (Opcional)</label>
+                            <input type="date" class="form-control" id="deadline">
                         </div>
                         <div class="mb-3">
                             <label for="topics" class="form-label">Temas Tratados</label>
