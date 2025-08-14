@@ -37,10 +37,50 @@ document.addEventListener('DOMContentLoaded', () => {
         const lowPriority = notes.filter(n => n.priority === 'Bajo').length;
 
         dashboardSection.innerHTML = `
-            <div class="col-6 col-md-3 mb-2"><div class="card p-2"><h6 class="card-title mb-1">Total</h6><p class="card-text fs-4 fw-bold">${totalNotes}</p></div></div>
-            <div class="col-6 col-md-3 mb-2"><div class="card p-2 border-danger"><h6 class="card-title mb-1 text-danger">Alta</h6><p class="card-text fs-4 fw-bold">${highPriority}</p></div></div>
-            <div class="col-6 col-md-3 mb-2"><div class="card p-2 border-warning"><h6 class="card-title mb-1 text-warning">Media</h6><p class="card-text fs-4 fw-bold">${mediumPriority}</p></div></div>
-            <div class="col-6 col-md-3 mb-2"><div class="card p-2 border-success"><h6 class="card-title mb-1 text-success">Baja</h6><p class="card-text fs-4 fw-bold">${lowPriority}</p></div></div>
+            <div class="col-6 col-md-3 mb-2">
+                <div class="card p-2">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-1 text-muted">Total</h6>
+                            <p class="card-text fs-4 fw-bold">${totalNotes}</p>
+                        </div>
+                        <i class="bi bi-journal-text fs-2 text-muted"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 mb-2">
+                <div class="card p-2">
+                     <div class="card-body d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-1 text-danger">Alta</h6>
+                            <p class="card-text fs-4 fw-bold">${highPriority}</p>
+                        </div>
+                        <i class="bi bi-exclamation-triangle-fill fs-2 text-danger"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 mb-2">
+                <div class="card p-2">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-1 text-warning">Media</h6>
+                            <p class="card-text fs-4 fw-bold">${mediumPriority}</p>
+                        </div>
+                        <i class="bi bi-exclamation-triangle fs-2 text-warning"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 mb-2">
+                <div class="card p-2">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-1 text-success">Baja</h6>
+                            <p class="card-text fs-4 fw-bold">${lowPriority}</p>
+                        </div>
+                        <i class="bi bi-check-circle fs-2 text-success"></i>
+                    </div>
+                </div>
+            </div>
         `;
     };
 
@@ -81,25 +121,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const priority_map = { 'Alto': 'danger', 'Medio': 'warning', 'Bajo': 'success' };
         filteredNotes.forEach(note => {
+            let deadlineHTML = '';
+            let deadlineClass = '';
+            if (note.deadline) {
+                const deadlineDate = new Date(note.deadline);
+                const today = new Date();
+                today.setHours(0,0,0,0); // Compare dates only
+                const diffTime = deadlineDate - today;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                if (diffDays < 0) {
+                    deadlineClass = 'text-danger fw-bold'; // Overdue
+                } else if (diffDays <= 3) {
+                    deadlineClass = 'text-warning fw-bold'; // Approaching
+                }
+                deadlineHTML = `<div class="d-flex align-items-center ${deadlineClass}"><i class="bi bi-calendar-event me-2"></i><span>Límite: ${note.deadline}</span></div>`;
+            }
+
             const noteCard = `
-                <div class="col-md-6 col-lg-4 mb-4">
-                    <div class="card h-100">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="card-title mb-0 text-truncate">${note.title}</h5>
-                            <div>
-                                <span class="badge bg-${priority_map[note.priority] || 'secondary'}">${note.priority}</span>
-                                <span class="badge bg-${note.type === 'Virtual' ? 'success' : 'info'} ms-1">${note.type}</span>
-                            </div>
-                        </div>
+                <div class="col-md-6 col-lg-4 mb-4 note-card">
+                    <div class="card h-100 shadow-sm">
                         <div class="card-body">
-                            <h6 class="card-subtitle mb-2 text-muted">Reunión: ${note.date}</h6>
-                            ${note.deadline ? `<h6 class="card-subtitle mb-2 text-danger">Límite: ${note.deadline}</h6>` : ''}
-                            <p class="card-text text-truncate"><strong>Temas:</strong> ${note.topics}</p>
+                            <div class="d-flex justify-content-between">
+                                <h5 class="card-title mb-2 text-truncate">${note.title}</h5>
+                                <span class="badge bg-${priority_map[note.priority] || 'secondary'}">${note.priority}</span>
+                            </div>
+                            <div class="card-subtitle mb-2 text-muted small">
+                                <div class="d-flex align-items-center"><i class="bi bi-calendar-check me-2"></i><span>Reunión: ${note.date}</span></div>
+                                ${deadlineHTML}
+                            </div>
+                            <p class="card-text small mt-3 text-truncate">${note.topics}</p>
                         </div>
-                        <div class="card-footer text-end bg-white border-top-0">
-                            <button class="btn btn-sm btn-outline-secondary" onclick="viewNote('${note.id}')"><i class="bi bi-eye"></i></button>
-                            <button class="btn btn-sm btn-outline-primary" onclick="editNote('${note.id}')"><i class="bi bi-pencil"></i></button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteNote('${note.id}')"><i class="bi bi-trash"></i></button>
+                        <div class="card-footer d-flex justify-content-between align-items-center bg-light-subtle">
+                             <span class="badge bg-light text-dark-emphasis border border-dark-subtle">${note.type}</span>
+                             <div>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="viewNote('${note.id}')" aria-label="Ver Nota"><i class="bi bi-eye"></i></button>
+                                <button class="btn btn-sm btn-outline-primary" onclick="editNote('${note.id}')" aria-label="Editar Nota"><i class="bi bi-pencil"></i></button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteNote('${note.id}')" aria-label="Eliminar Nota"><i class="bi bi-trash"></i></button>
+                            </div>
                         </div>
                     </div>
                 </div>`;
@@ -115,6 +174,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- Event Listeners ---
+    document.getElementById('note-modal').addEventListener('shown.bs.modal', () => {
+        document.getElementById('meeting-title').focus();
+    });
+
     addNoteFab.addEventListener('click', () => {
         resetForm();
         noteModalLabel.textContent = 'Crear Nueva Nota';
@@ -154,7 +217,20 @@ document.addEventListener('DOMContentLoaded', () => {
         showAlert(`Nota ${isUpdating ? 'actualizada' : 'creada'} con éxito.`, 'success');
     });
 
-    [searchInput, sortBy, filterByType].forEach(el => el.addEventListener('input', renderNotes));
+    const clearSearchBtn = document.getElementById('clear-search-btn');
+
+    searchInput.addEventListener('input', () => {
+        clearSearchBtn.classList.toggle('d-none', !searchInput.value);
+        renderNotes();
+    });
+
+    clearSearchBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        clearSearchBtn.classList.add('d-none');
+        renderNotes();
+    });
+
+    [sortBy, filterByType].forEach(el => el.addEventListener('input', renderNotes));
 
     // --- Import/Export ---
     const exportNotesBtn = document.getElementById('export-notes-btn');
@@ -196,6 +272,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Window Functions ---
+    const deleteConfirmModal = new bootstrap.Modal(document.getElementById('delete-confirm-modal'));
+    const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+    let noteIdToDelete = null;
+
     window.viewNote = (id) => {
         const note = notes.find(note => note.id === id);
         if (!note) return;
@@ -235,13 +315,20 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.deleteNote = (id) => {
-        if (confirm('¿Estás seguro de que quieres eliminar esta nota?')) {
-            notes = notes.filter(note => note.id !== id);
+        noteIdToDelete = id;
+        deleteConfirmModal.show();
+    };
+
+    confirmDeleteBtn.addEventListener('click', () => {
+        if (noteIdToDelete) {
+            notes = notes.filter(note => note.id !== noteIdToDelete);
             saveNotes();
             renderNotes();
             showAlert('Nota eliminada.', 'danger');
+            noteIdToDelete = null;
+            deleteConfirmModal.hide();
         }
-    };
+    });
 
     // --- Theme Logic ---
     const themeToggle = document.getElementById('theme-toggle');
